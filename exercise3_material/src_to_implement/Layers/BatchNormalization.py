@@ -118,3 +118,11 @@ class BatchNormalization(BaseLayer):
     @property
     def gradient_bias(self):
         return self._beta_gradient
+
+    def norm(self):
+        norm = 0
+        if self._optimizer_gamma.regularizer:
+            norm += self._optimizer_gamma.regularizer.norm(self.weights)
+        if self._optimizer_beta.regularizer:
+            norm += self._optimizer_beta.regularizer.norm(self.bias)
+        return norm

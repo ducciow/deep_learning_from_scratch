@@ -52,7 +52,7 @@ class FullyConnected(BaseLayer):
         weights_shape = self.weights.shape
         bias_shape = self.bias.shape
         self.weights = weights_initializer.initialize(weights_shape, weights_shape[0], weights_shape[1])
-        self.bias = bias_initializer.initialize(bias_shape, bias_shape, bias_shape)
+        self.bias = bias_initializer.initialize(bias_shape, bias_shape[0], bias_shape[0])
 
     def norm(self):
         norm = 0
@@ -61,3 +61,12 @@ class FullyConnected(BaseLayer):
         if self._optimizer_bias.regularizer:
             norm += self._optimizer_bias.regularizer.norm(self.bias)
         return norm
+
+    def get_input(self):
+        return self._X
+
+    def set_input(self, input_vector):
+        self._X = input_vector
+
+    curr_input = property(get_input, set_input)
+
