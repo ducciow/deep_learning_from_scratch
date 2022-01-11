@@ -17,7 +17,7 @@ class FullyConnected(BaseLayer):
         self._optimizer_bias = None
 
     def forward(self, input_tensor):
-        self._X = input_tensor
+        self._X = input_tensor.copy()
         return np.matmul(self._X, self.weights) + self.bias
 
     def get_optimizer(self):
@@ -30,7 +30,7 @@ class FullyConnected(BaseLayer):
     optimizer = property(get_optimizer, set_optimizer)
 
     def backward(self, error_tensor):
-        self._E = error_tensor
+        self._E = error_tensor.copy()
         # gradient wrt X
         result_e = np.matmul(self._E, self.weights.transpose())
         # gradient wrt W
@@ -47,6 +47,10 @@ class FullyConnected(BaseLayer):
     @property
     def gradient_weights(self):
         return self._weight_gradient
+
+    @gradient_weights.setter
+    def gradient_weights(self, w):
+        self._weight_gradient = w
 
     def initialize(self, weights_initializer, bias_initializer):
         weights_shape = self.weights.shape
@@ -66,7 +70,7 @@ class FullyConnected(BaseLayer):
         return self._X
 
     def set_input(self, input_vector):
-        self._X = input_vector
+        self._X = input_vector.copy()
 
     curr_input = property(get_input, set_input)
 

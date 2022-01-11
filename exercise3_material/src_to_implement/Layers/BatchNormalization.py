@@ -90,7 +90,7 @@ class BatchNormalization(BaseLayer):
             result_e = self.reformat(result_e)
         return result_e
 
-    def initialize(self):
+    def initialize(self, *kargs):
         self.weights = np.ones(self.channels)
         self.bias = np.zeros(self.channels)
 

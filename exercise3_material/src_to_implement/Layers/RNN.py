@@ -1,5 +1,4 @@
 import numpy as np
-import copy
 from .Base import BaseLayer
 from .FullyConnected import FullyConnected
 from .TanH import TanH
@@ -16,79 +15,79 @@ class RNN(BaseLayer):
         # cell attributes
         self._memorize = False  # whether restore the hidden state from last iteration
         self.h = np.zeros(self.hidden_size)  # h_t
-        self.y = np.empty(self.output_size)  # y_t
-        self.xs = []  # length: time steps
+        self.xs = None  # length: time steps
         self.hs = []  # length: time steps + 1
-        self.ys = []  # length: time steps
         self.h_fc = None
         self.y_fc = None
         self.tanh = None
         self.sigmoid = None
         # initialize component layers
         self.initialize_components()
+        self._gradient_weights = np.zeros_like(self.weights)
 
     def forward(self, input_tensor):
         if not self._memorize:
             self.h = np.zeros(self.hidden_size)
-            self.y = np.empty(self.output_size)
-        self.xs = []
-        self.hs = []
-        self.hs.append(self.h)
-        self.ys = []
+        self.xs = input_tensor.copy()
+        self.hs = [self.h]
+        self._gradient_weights = np.zeros_like(self.weights)
+        ys = []
         # iterate through time
-        for x in input_tensor:
-            self.xs.append(x)
+        for x in self.xs:
             # -----> 1. compute h_t <-----
-            # concatenate x_t and h_t-1
-            h_n_x = np.concatenate((x, self.h))
-            # add one dimension for batch
-            h_n_x = np.expand_dims(h_n_x, axis=0)
-            self.h = self.h_fc.forward(h_n_x)
-            # reduce the first dimension
-            self.h = np.squeeze(self.h)
+            # concatenate h_t-1 and x_t
+            h_n_x = np.concatenate((self.h, x))
+            # fc layer
+            self.h = np.squeeze(self.h_fc.forward(np.expand_dims(h_n_x, axis=0)))
+            # activation layer
             self.h = self.tanh.forward(self.h)
+            # cache
             self.hs.append(self.h)
-            # compute y_t
-            # add dimension
-            self.h = np.expand_dims(self.h, axis=0)
-            self.y = self.y_fc.forward(self.h)
-            # reduce the first dimension
-            self.h = np.squeeze(self.h)
-            self.y = np.squeeze(self.y)
-            self.y = self.sigmoid.forward(self.y)
-            self.ys.append(self.y)
-        return np.array(self.ys)
+            # -----> 2. compute y_t <-----
+            # fc layer
+            y = np.squeeze(self.y_fc.forward(np.expand_dims(self.h, axis=0)))
+            # activation layer
+            y = self.sigmoid.forward(y)
+            # cache
+            ys.append(y)
+        return np.array(ys)
 
     def backward(self, error_tensor):
         # initialize the result error tensor
-        result_e = np.empty((self.input_size, error_tensor.shape[0])).T
+        result_e = np.empty(self.xs.shape)
         # error tensor from the last hidden state
-        error_h = np.zeros(self.hidden_size)  # hidden state from the last time step
+        error_h = np.zeros(self.hidden_size)
+        # iterate reversely through time
         for i in range(error_tensor.shape[0] - 1, -1, -1):
+
             # -----> 1. compute the error vector from output y_t <-----
-            error_vector = error_tensor[i]
+            error_vector = error_tensor[i].copy()
+            # activation layer backward
             error_sigmoid = self.sigmoid.backward(error_vector)
             # fc layer backward
             the_h = self.hs[i + 1]
             self.y_fc.curr_input = np.expand_dims(the_h, axis=0)
-            error_y_fc = self.y_fc.backward(np.expand_dims(error_sigmoid, axis=0))
-            # reduce the first dimension
-            error_y_fc = np.squeeze(error_y_fc)
-            # -----> 2. compute the error vector from hidden state h_t+1 <-----
+            error_y_fc = np.squeeze(self.y_fc.backward(np.expand_dims(error_sigmoid, axis=0)))
+
+            # -----> 2. sum up the copied error for h_t <-----
+            error_h += error_y_fc
+
+            # -----> 3. compute the error vector from hidden state h_t+1 <-----
+            # activation layer backward
             error_tanh = self.tanh.backward(error_h)
             # fc layer backward
-            the_x = self.xs[i]
             the_h = self.hs[i]
-            the_x_n_h = np.concatenate((the_x, the_h))
-            self.h_fc.curr_input = np.expand_dims(the_x_n_h, axis=0)
-            error_h_fc = self.h_fc.backward(np.expand_dims(error_tanh, axis=0))
-            # reduce the first dimension
-            error_h_fc = np.squeeze(error_h_fc)
-            # -----> 3. divide the concatenated error vector for x and h respectively <-----
-            result_e[i] = error_h_fc[:self.input_size]  # x
-            error_h = error_h_fc[self.input_size:]  # h
-            # -----> sum up the copied error for h_t <-----
-            error_h += error_y_fc
+            the_x = self.xs[i]
+            the_h_n_x = np.concatenate((the_h, the_x))
+            self.h_fc.curr_input = np.expand_dims(the_h_n_x, axis=0)
+            error_h_fc = np.squeeze(self.h_fc.backward(np.expand_dims(error_tanh, axis=0)))
+
+            # -----> 4. divide the concatenated error vector for x and h respectively <-----
+            error_h = error_h_fc[:self.hidden_size]  # h
+            result_e[i] = error_h_fc[self.hidden_size:]  # x
+
+            self._gradient_weights += self.h_fc.gradient_weights
+
         return result_e
 
     def get_memorize(self):
@@ -100,7 +99,7 @@ class RNN(BaseLayer):
     memorize = property(get_memorize, set_memorize)
 
     def initialize_components(self):
-        self.h_fc = FullyConnected(self.input_size + self.hidden_size, self.hidden_size)
+        self.h_fc = FullyConnected(self.hidden_size + self.input_size, self.hidden_size)
         self.y_fc = FullyConnected(self.hidden_size, self.output_size)
         self.tanh = TanH()
         self.sigmoid = Sigmoid()
@@ -121,10 +120,6 @@ class RNN(BaseLayer):
     def norm(self):
         return self.y_fc.norm() + self.h_fc.norm()
 
-    @property
-    def gradient_weights(self):
-        return self.h_fc.gradient_weights
-
     def get_weights(self):
         return self.h_fc.weights
 
@@ -132,3 +127,15 @@ class RNN(BaseLayer):
         self.h_fc.weights = w
 
     weights = property(get_weights, set_weights)
+
+    @property
+    def gradient_weights(self):
+        return self._gradient_weights
+
+    @gradient_weights.setter
+    def gradient_weights(self, w):
+        self._gradient_weights = w
+
+
+
+

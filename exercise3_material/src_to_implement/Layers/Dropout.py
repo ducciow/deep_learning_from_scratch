@@ -23,3 +23,4 @@ class Dropout(BaseLayer):
         output_tensor *= self.loc_zeros
         output_tensor /= self.prob
         return output_tensor
+

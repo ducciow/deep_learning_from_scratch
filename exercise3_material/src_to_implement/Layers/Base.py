@@ -8,3 +8,6 @@ class BaseLayer:
 
     def backward(self, error_tensor):
         pass
+
+    def norm(self):
+        return 0
