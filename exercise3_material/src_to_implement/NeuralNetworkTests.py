@@ -1726,7 +1726,7 @@ class TestNeuralNetwork3(unittest.TestCase):
 
         net.append_layer(Flatten.Flatten())
 
-        fcl_1 = FullyConnected.FullyConnected(fcl_1_input_size, np.int(fcl_1_input_size/2.))
+        fcl_1 = FullyConnected.FullyConnected(fcl_1_input_size, int(fcl_1_input_size/2.))
         net.append_layer(fcl_1)
 
         if batch_norm:
@@ -1737,12 +1737,12 @@ class TestNeuralNetwork3(unittest.TestCase):
 
         net.append_layer(ReLU.ReLU())
 
-        fcl_2 = FullyConnected.FullyConnected(np.int(fcl_1_input_size / 2), np.int(fcl_1_input_size / 3))
+        fcl_2 = FullyConnected.FullyConnected(int(fcl_1_input_size / 2), int(fcl_1_input_size / 3))
         net.append_layer(fcl_2)
 
         net.append_layer(ReLU.ReLU())
 
-        fcl_3 = FullyConnected.FullyConnected(np.int(fcl_1_input_size / 3), categories)
+        fcl_3 = FullyConnected.FullyConnected(int(fcl_1_input_size / 3), categories)
         net.append_layer(fcl_3)
 
         net.append_layer(SoftMax.SoftMax())

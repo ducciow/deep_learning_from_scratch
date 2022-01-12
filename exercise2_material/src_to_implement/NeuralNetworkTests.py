@@ -909,12 +909,12 @@ class TestNeuralNetwork2(unittest.TestCase):
 
         net.append_layer(Flatten.Flatten())
 
-        fcl_1 = FullyConnected.FullyConnected(fcl_1_input_size, np.int(fcl_1_input_size/2.))
+        fcl_1 = FullyConnected.FullyConnected(fcl_1_input_size, int(fcl_1_input_size/2.))
         net.append_layer(fcl_1)
 
         net.append_layer(ReLU.ReLU())
 
-        fcl_2 = FullyConnected.FullyConnected(np.int(fcl_1_input_size/2.), categories)
+        fcl_2 = FullyConnected.FullyConnected(int(fcl_1_input_size/2.), categories)
         net.append_layer(fcl_2)
 
         net.append_layer(SoftMax.SoftMax())

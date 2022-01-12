@@ -180,23 +180,6 @@ class Conv(BaseLayer):
                     x_map[j_y, j_x] = error_map[i_y, i_x]
         return x_map
 
-    @property
-    def gradient_weights(self):
-        return self._gradient_weights
-
-    @property
-    def gradient_bias(self):
-        return self._gradient_bias
-
-    def get_optimizer(self):
-        return self._optimizer_weights, self._optimizer_bias
-
-    def set_optimizer(self, optimizer):
-        self._optimizer_weights = copy.deepcopy(optimizer)
-        self._optimizer_bias = copy.deepcopy(optimizer)
-
-    optimizer = property(get_optimizer, set_optimizer)
-
     def initialize(self, weights_initializer, bias_initializer):
         self.weights = weights_initializer.initialize(self.convolution_shape, self.fan_in, self.fan_out)
         self.bias = bias_initializer.initialize(self.num_kernels, self.num_kernels, self.num_kernels)
@@ -208,3 +191,20 @@ class Conv(BaseLayer):
         if self._optimizer_bias.regularizer:
             norm += self._optimizer_bias.regularizer.norm(self.bias)
         return norm
+
+    def get_optimizer(self):
+        return self._optimizer_weights, self._optimizer_bias
+
+    def set_optimizer(self, optimizer):
+        self._optimizer_weights = copy.deepcopy(optimizer)
+        self._optimizer_bias = copy.deepcopy(optimizer)
+
+    optimizer = property(get_optimizer, set_optimizer)
+
+    @property
+    def gradient_weights(self):
+        return self._gradient_weights
+
+    @property
+    def gradient_bias(self):
+        return self._gradient_bias

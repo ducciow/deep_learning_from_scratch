@@ -20,15 +20,6 @@ class FullyConnected(BaseLayer):
         self._X = input_tensor.copy()
         return np.matmul(self._X, self.weights) + self.bias
 
-    def get_optimizer(self):
-        return self._optimizer_weights, self._optimizer_bias
-
-    def set_optimizer(self, optimizer):
-        self._optimizer_weights = copy.deepcopy(optimizer)
-        self._optimizer_bias = copy.deepcopy(optimizer)
-
-    optimizer = property(get_optimizer, set_optimizer)
-
     def backward(self, error_tensor):
         self._E = error_tensor.copy()
         # gradient wrt X
@@ -44,10 +35,6 @@ class FullyConnected(BaseLayer):
             self.bias = self._optimizer_bias.calculate_update(self.bias, self._bias_gradient)
         return result_e
 
-    @property
-    def gradient_weights(self):
-        return self._weight_gradient
-
     def initialize(self, weights_initializer, bias_initializer):
         weights_shape = self.weights.shape
         bias_shape = self.bias.shape
@@ -62,11 +49,35 @@ class FullyConnected(BaseLayer):
             norm += self._optimizer_bias.regularizer.norm(self.bias)
         return norm
 
-    def get_input(self):
+    @property
+    def optimizer(self):
+        return self._optimizer_weights, self._optimizer_bias
+
+    @optimizer.setter
+    def optimizer(self, optimizer):
+        self._optimizer_weights = copy.deepcopy(optimizer)
+        self._optimizer_bias = copy.deepcopy(optimizer)
+
+    @property
+    def curr_input(self):
         return self._X
 
-    def set_input(self, input_vector):
+    @curr_input.setter
+    def curr_input(self, input_vector):
         self._X = input_vector.copy()
 
-    curr_input = property(get_input, set_input)
+    @property
+    def gradient_weights(self):
+        return self._weight_gradient
 
+    @gradient_weights.setter
+    def gradient_weights(self, g):
+        self._weight_gradient = g
+
+    @property
+    def gradient_bias(self):
+        return self._bias_gradient
+
+    @gradient_bias.setter
+    def gradient_bias(self, g):
+        self._bias_gradient = g
