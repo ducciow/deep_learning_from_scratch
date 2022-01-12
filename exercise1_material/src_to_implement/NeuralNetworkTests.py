@@ -189,12 +189,11 @@ class TestSoftMax(unittest.TestCase):
         error = layer.backward(error)
         # test if every wrong class confidence is decreased
         for element in error[self.label_tensor == 0]:
-            self.assertAlmostEqual(element, 1/3, places = 3)
+            self.assertAlmostEqual(element, 1 / 3, places=3)
 
         # test if every correct class confidence is increased
         for element in error[self.label_tensor == 1]:
-            self.assertAlmostEqual(element, -1, places = 3)
-
+            self.assertAlmostEqual(element, -1, places=3)
 
     def test_regression_forward(self):
         np.random.seed(1337)
@@ -207,7 +206,6 @@ class TestSoftMax(unittest.TestCase):
 
         # just see if it's bigger then zero
         self.assertGreater(float(loss), 0.)
-
 
     def test_regression_backward(self):
         input_tensor = np.abs(np.random.random(self.label_tensor.shape))
@@ -283,7 +281,7 @@ class TestCrossEntropyLoss(unittest.TestCase):
         input_tensor[:, 1] = 1
         layer = Loss.CrossEntropyLoss()
         loss = layer.forward(input_tensor, label_tensor)
-        self.assertAlmostEqual(loss, 324.3928805, places = 4)
+        self.assertAlmostEqual(loss, 324.3928805, places=4)
 
 
 class TestOptimizers1(unittest.TestCase):
@@ -381,12 +379,13 @@ class L2Loss:
         return np.sum(np.square(input_tensor - label_tensor))
 
     def backward(self, label_tensor):
-        return 2*np.subtract(self.input_tensor, label_tensor)
+        return 2 * np.subtract(self.input_tensor, label_tensor)
 
 
 if __name__ == '__main__':
 
     import sys
+
     if sys.argv[-1] == "Bonus":
         loader = unittest.TestLoader()
         bonus_points = {}
@@ -401,14 +400,18 @@ if __name__ == '__main__':
                 bonus_points.update({t.__name__: ["FAIL", p]})
 
         import time
+
         time.sleep(1)
         print("=========================== Statistics ===============================")
         exam_percentage = 1.5
         table = []
         for i, (k, (outcome, p)) in enumerate(bonus_points.items()):
-            table.append([i, k, outcome, "0 / {} (%)".format(p) if outcome == "FAIL" else "{} / {} (%)".format(p, p), "{:.3f} / 10 (%)".format(p/100 * exam_percentage)])
+            table.append([i, k, outcome, "0 / {} (%)".format(p) if outcome == "FAIL" else "{} / {} (%)".format(p, p),
+                          "{:.3f} / 10 (%)".format(p / 100 * exam_percentage)])
         table.append([])
-        table.append(["Ex1", "Total Achieved", "", "{} / 100 (%)".format(total_points), "{:.3f} / 10 (%)".format(total_points * exam_percentage / 100)])
-        print(tabulate.tabulate(table, headers=['Pos', 'Test', "Result", 'Percent in Exercise', 'Percent in Exam'], tablefmt="github"))
+        table.append(["Ex1", "Total Achieved", "", "{} / 100 (%)".format(total_points),
+                      "{:.3f} / 10 (%)".format(total_points * exam_percentage / 100)])
+        print(tabulate.tabulate(table, headers=['Pos', 'Test', "Result", 'Percent in Exercise', 'Percent in Exam'],
+                                tablefmt="github"))
     else:
         unittest.main()
