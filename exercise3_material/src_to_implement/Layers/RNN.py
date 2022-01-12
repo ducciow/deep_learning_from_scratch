@@ -132,9 +132,6 @@ class RNN(BaseLayer):
     def gradient_weights(self):
         return self._gradient_weights
 
-    @gradient_weights.setter
-    def gradient_weights(self, w):
-        self._gradient_weights = w
 
 
 

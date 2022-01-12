@@ -48,10 +48,6 @@ class FullyConnected(BaseLayer):
     def gradient_weights(self):
         return self._weight_gradient
 
-    @gradient_weights.setter
-    def gradient_weights(self, w):
-        self._weight_gradient = w
-
     def initialize(self, weights_initializer, bias_initializer):
         weights_shape = self.weights.shape
         bias_shape = self.bias.shape
