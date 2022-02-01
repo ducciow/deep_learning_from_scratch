@@ -14,7 +14,8 @@ class Trainer:
                  train_dl=None,  # Training data set
                  val_test_dl=None,  # Validation (or test) data set
                  cuda=True,  # Whether to use the GPU
-                 early_stopping_patience=-1):  # The patience for early stopping
+                 early_stopping_patience=-1,  # The patience for early stopping
+                 use_lr_decay=False):  # learning rate decay
         self._model = model
         self._crit = crit
         self._optim = optim
@@ -23,6 +24,8 @@ class Trainer:
         self._cuda = cuda
 
         self._early_stopping_patience = early_stopping_patience
+        self._use_lr_decay = use_lr_decay
+        self._scheduler = None
 
         if cuda:
             self._model = model.cuda()
@@ -127,8 +130,14 @@ class Trainer:
         val_loss = []
         f1_scores = []
         num_epoch = 0
-        best_score = 0
+        best_loss = 100
         plateau = 0  # number of epochs the val loss did not decrease
+
+        if self._use_lr_decay:
+            self._scheduler = t.optim.lr_scheduler.ReduceLROnPlateau(self._optim,
+                                                                     mode='min',
+                                                                     threshold=1e-3,
+                                                                     threshold_mode='abs')
         # while True:
         for e in tqdm(range(epochs)):
             # stop by epoch number
@@ -145,17 +154,23 @@ class Trainer:
             f1_scores.append(f1)
 
             # use the save_checkpoint function to save the model (can be restricted to epochs with improvement)
-            if f1 > best_score:
-                best_score = f1
+            if loss_v < best_loss:
+                best_loss = loss_v
                 self.save_checkpoint(num_epoch)
 
             # check whether early stopping should be performed using the early stopping criterion and stop if so
             if self._early_stopping_patience > 0 and num_epoch > 1:
-                if val_loss[-1] < val_loss[-2]:
+                if val_loss[-2] - val_loss[-1] > 1e-3:
                     plateau = 0
                 else:
                     plateau += 1
                 if plateau >= self._early_stopping_patience:
                     break
+
+            if self._use_lr_decay:
+                self._scheduler.step(loss_v)
+
+            print('\n', num_epoch, plateau, float(loss_v), float(f1), self._optim.state_dict()['param_groups'][0]['lr'])
+
         # return the losses for both training and validation
         return train_loss, val_loss

@@ -7,6 +7,9 @@ import torchvision as tv
 import numpy as np
 import pandas as pd
 
+
+ROOT_PATH = './'
+
 train_mean = [0.59685254, 0.59685254, 0.59685254]
 train_std = [0.16043035, 0.16043035, 0.16043035]
 
@@ -32,7 +35,7 @@ class ChallengeDataset(Dataset):
         img_label = self.data.iloc[index, 1:]
 
         # read image
-        img_path = Path.cwd()/img_name
+        img_path = Path(ROOT_PATH)/img_name
         img = imread(img_path)
 
         # transform image

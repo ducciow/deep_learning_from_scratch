@@ -8,16 +8,20 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from pathlib import Path
 
-BATCH_SIZE = 32
-LEARNING_RATE = 1e-4
-NUM_EPOCH = 10
-DATA_4_DEBUG = 500
+
+ROOT_PATH = './'  # root path
+BATCH_SIZE = 128  # batch size
+LEARNING_RATE = 1e-4  # learning rate for optimizer
+WEIGHT_DECAY = 1e-4  # lambda for L2 loss
+NUM_EPOCH = 200  # number of total epochs for training
+DATA_4_DEBUG = 0.25  # ratio of the entire data used for debugging
 
 # load the data from the csv file and perform a train-test-split
-csv_path = Path('./data.csv')
+csv_path = Path(ROOT_PATH)/'data.csv'
 csv_df = pd.read_csv(csv_path, sep=';')
 
-csv_df = csv_df.iloc[:DATA_4_DEBUG]
+data_4_use = int(np.ceil(len(csv_df) * DATA_4_DEBUG))
+csv_df = csv_df.iloc[: data_4_use]
 
 training_set, val_st = train_test_split(csv_df, test_size=0.3)
 
@@ -32,7 +36,8 @@ m = model.ResNet()
 loss_fn = t.nn.BCELoss()
 
 # set up the optimizer
-optim = t.optim.Adam(m.parameters(), lr=LEARNING_RATE)
+optim = t.optim.Adam(m.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
+scheduler = t.optim.lr_scheduler.ReduceLROnPlateau(optim, mode='min', patience=10)
 
 # create an object of type Trainer and set its early stopping criterion
 trainer = Trainer(m,  # Model to be trained.
@@ -41,7 +46,8 @@ trainer = Trainer(m,  # Model to be trained.
                   train_dl=training_data,  # Training data set
                   val_test_dl=val_data,  # Validation (or test) data set
                   cuda=True,  # Whether to use the GPU
-                  early_stopping_patience=5)
+                  early_stopping_patience=20,
+                  use_lr_decay=True)
 
 # go, go, go... call fit on trainer
 res = trainer.fit(NUM_EPOCH)
