@@ -130,7 +130,7 @@ class Trainer:
         val_loss = []
         f1_scores = []
         num_epoch = 0
-        best_loss = 100
+        best_score = 0
         plateau = 0  # number of epochs the val loss did not decrease
 
         if self._use_lr_decay:
@@ -138,6 +138,10 @@ class Trainer:
                                                                      mode='min',
                                                                      threshold=1e-3,
                                                                      threshold_mode='abs')
+
+        log_ = open('log.txt', 'w')
+        log_.write('Epoch\tPlateau\tloss\tF1\tlr\n')
+
         # while True:
         for e in tqdm(range(epochs)):
             # stop by epoch number
@@ -154,8 +158,8 @@ class Trainer:
             f1_scores.append(f1)
 
             # use the save_checkpoint function to save the model (can be restricted to epochs with improvement)
-            if loss_v < best_loss:
-                best_loss = loss_v
+            if f1 > best_score:
+                best_score = f1
                 self.save_checkpoint(num_epoch)
 
             # check whether early stopping should be performed using the early stopping criterion and stop if so
@@ -170,7 +174,7 @@ class Trainer:
             if self._use_lr_decay:
                 self._scheduler.step(loss_v)
 
-            print('\n', num_epoch, plateau, float(loss_v), float(f1), self._optim.state_dict()['param_groups'][0]['lr'])
+            log_.write(str(num_epoch)+'\t'+str(plateau)+'\t'+str(float(loss_v))+'\t'+str(float(f1))+'\t'+str(self._optim.state_dict()['param_groups'][0]['lr'])+'\n')
 
         # return the losses for both training and validation
         return train_loss, val_loss

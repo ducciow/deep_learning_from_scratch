@@ -11,9 +11,9 @@ from pathlib import Path
 
 ROOT_PATH = './'  # root path
 BATCH_SIZE = 128  # batch size
-LEARNING_RATE = 1e-4  # learning rate for optimizer
+LEARNING_RATE = 1e-3  # learning rate for optimizer
 WEIGHT_DECAY = 1e-4  # lambda for L2 loss
-NUM_EPOCH = 200  # number of total epochs for training
+NUM_EPOCH = 3  # number of total epochs for training
 DATA_4_DEBUG = 0.25  # ratio of the entire data used for debugging
 
 # load the data from the csv file and perform a train-test-split
